@@ -1,0 +1,328 @@
+﻿{
+    "Parameters": {
+        "SiteName": {
+            "Type": "string",
+            "DefaultValue": "XConnect",
+            "Description": "The name of the site to be deployed."
+        },
+        "XConnectCert": {
+            "Type": "string",
+            "Description": "The certificate to use for encryption. Provide the name or the thumbprint.",
+            "DefaultValue" : ""
+        },
+        "SSLCert": {
+            "Type": "string",
+            "Description": "The certificate to use for HTTPS web bindings. Provide the name or the thumbprint. If not provided a certificate will be generated.",
+            "DefaultValue": ""
+        },
+        "HostMappingName": {
+            "Type": "string",
+            "Reference": "SiteName",
+            "Description": "The host mapping name of the site."
+        },
+        "DnsName" :{
+            "Type": "string",
+            "Reference": "SiteName",
+            "Description": "The dns name of the site."
+        },
+		"InstallationPath": {
+            "Type": "string",
+            "Description": "The path to the folder where Sitecore will be installed",
+	    "DefaultValue": ""
+        }
+    },
+    "Variables": {
+        "Security.CertificateStore":                "Cert:\\Localmachine\\My",
+        "Security.SSL.CertificateThumbprint":       "[GetCertificateThumbprint(parameter('SSLCert'), variable('Security.CertificateStore'))]",
+        "Security.XConnect.CertificateThumbprint":  "[GetCertificateThumbprint(parameter('XConnectCert'), variable('Security.CertificateStore'))]",
+        "Security.XConnect.CertificatePath":        "[joinpath(variable('Security.CertificateStore'), variable('Security.XConnect.CertificateThumbprint'))]",
+
+        "Site.PhysicalPath": "[parameter('InstallationPath')]",
+        "Site.DataFolder":  "[joinpath(variable('Site.PhysicalPath'), 'App_Data')]",
+
+        "Services.IndexWorker.InstallPath": "[joinpath(variable('Site.DataFolder'), 'jobs','continuous','IndexWorker')]",
+        "Services.IndexWorker.Name":        "[concat(parameter('SiteName'), '-IndexWorker')]",
+
+        "Services.MarketingAutomationEngine.InstallPath":   "[joinpath(variable('Site.DataFolder'), 'jobs','continuous','AutomationEngine')]",
+        "Services.MarketingAutomationEngine.Name":          "[concat(parameter('SiteName'), '-MarketingAutomationService')]",
+
+        "Services.ProcessingEngine.InstallPath":   "[joinpath(variable('Site.DataFolder'), 'jobs','continuous','ProcessingEngine')]",
+        "Services.ProcessingEngine.Name":          "[concat(parameter('SiteName'), '-ProcessingEngineService')]",
+
+        "Solr.Config.Path": "[joinpath(variable('Site.DataFolder'), 'solrcommands', 'schema.json')]"
+
+    },
+    "Register":{
+        "Tasks": {
+            "RemoveItem": "Remove-Item"
+        },
+        "ConfigFunction": {
+            "ConvertToSecureString": "ConvertTo-SecureString"
+        }
+    },
+    "Tasks": {
+        "CreateAppPool": {
+            "Description": "Creates or updates the app pool.",
+            "Type": "AppPool",
+            "Params": {
+                "Name": "[parameter('SiteName')]",
+                "Properties": {
+                    "ProcessModel": {
+                        "identityType": "ApplicationPoolIdentity"
+                    }
+                }
+            }
+        },
+        "SetAppPoolCertStorePermissions": {
+            "Description": "Set permissions for the App Pool User to access the client certificate.",
+            "Type": "FilePermissions",
+            "Params": {
+                "Path": "[ResolveCertificatePath(variable('Security.XConnect.CertificatePath'))]",
+                "Rights": [
+                    {
+                        "User": "[concat('IIS AppPool\\', parameter('SiteName'))]",
+                        "FileSystemRights": [ "Read" ],
+                        "InheritanceFlags": [ "None" ]
+                    }
+                ]
+            }
+        },
+        "CreateWebsite": {
+            "Description": "Creates or updates the IIS website instance.",
+            "Type": "Website",
+            "Params": {
+                "Name": "[parameter('SiteName')]",
+                "ApplicationPool": "[parameter('SiteName')]",
+                "PhysicalPath": "[variable('Site.PhysicalPath')]"
+            }
+        },
+        "StopWebsite": {
+            "Description": "Stops the website if it is running.",
+            "Type": "ManageWebsite",
+            "Params": {
+                "Name": "[parameter('SiteName')]",
+                "Action": "Stop"
+            }
+        },
+        "StopAppPool": {
+            "Description": "Stops the app pool if it is running.",
+            "Type": "ManageAppPool",
+            "Params": {
+                "Name": "[parameter('SiteName')]",
+                "Action": "Stop"
+            }
+        },
+        "StopServices": {
+            "Description": "Stops the services if they running.",
+            "Type": "ManageService",
+            "Params": [
+                {
+                    "Name": "[variable('Services.IndexWorker.Name')]",
+                    "Status": "Stopped",
+                    "PostDelay": 3000
+                },
+                {
+                    "Name": "[variable('Services.MarketingAutomationEngine.Name')]",
+                    "Status": "Stopped",
+                    "PostDelay": 3000
+                },
+                {
+                    "Name": "[variable('Services.ProcessingEngine.Name')]",
+                    "Status": "Stopped",
+                    "PostDelay": 3000
+                }
+            ]
+        },
+        "RemoveServices": {
+            "Description": "Removes the current service.",
+            "Type": "RemoveService",
+            "Params": [
+                { "Name": "[variable('Services.IndexWorker.Name')]" },
+                { "Name": "[variable('Services.MarketingAutomationEngine.Name')]" },
+                { "Name": "[variable('Services.ProcessingEngine.Name')]" }
+            ]
+        },
+        "RemoveDefaultBinding": {
+            "Description": "Removes the default *:80 web binding",
+            "Type": "WebBinding",
+            "Params": {
+                "SiteName": "[parameter('SiteName')]",
+                "Remove": [ { "Port": "80", "IPAddress": "*" } ]
+            }
+        },
+        "CreateBindingsWithThumbprint": {
+            "Description": "Configures the site bindings for the website.",
+            "Type": "WebBinding",
+            "Params": {
+                "SiteName": "[parameter('SiteName')]",
+                "Add": [
+                    {
+                        "HostHeader": "[parameter('DnsName')]",
+                        "Protocol": "https",
+                        "SSLFlags": 1,
+                        "Thumbprint": "[variable('Security.SSL.CertificateThumbprint')]"
+                    }
+                ]
+            },
+            "Skip": "[not(parameter('SSLCert'))]"
+        },
+        "SetClientCertificatePermissions": {
+            "Type": "WebsiteClientCert",
+            "Params": {
+                "SiteName": "[parameter('SiteName')]",
+                "Setting": "Accept"
+            }
+        },
+        "SupportListManagerLargeUpload": {
+            "Type": "IISConfiguration",
+            "Params": {
+                "SiteName": "[parameter('SiteName')]",
+                "ConfigPath": "system.webServer/serverRuntime",
+                "Key": "uploadReadAheadSize",
+                "Value": 491520000
+            }
+        },
+        "CreateHostHeader": {
+            "Description": "Sets a hostheader for the website.",
+            "Type": "HostHeader",
+            "Params": {
+                "HostName": "[parameter('HostMappingName')]"
+            },
+            "Skip": "[not(parameter('HostMappingName'))]"
+        },
+        "CreateBindingsWithDevelopmentThumbprint": {
+            "Description": "Creates a new thumbprint with a custom CA",
+            "Type": "AddWebFeatureSSL",
+            "Params": {
+                "SiteName": "[parameter('SiteName')]",
+                "HostName": "[parameter('DnsName')]",
+                "OutputDirectory": "[variable('Site.DataFolder')]"
+            },
+            "Skip": "[parameter('SSLCert')]"
+        },
+        "InstallServices": {
+            "Description": "Installs the service.",
+            "Type": "Command",
+            "Params": [
+                {
+                    "Path": "[joinpath(variable('Services.IndexWorker.InstallPath'), 'XConnectSearchIndexer.exe')]",
+                    "Arguments": [ "-i", "[variable('Services.IndexWorker.Name')]" ]
+                },
+                {
+                    "Path": "[joinpath(variable('Services.MarketingAutomationEngine.InstallPath'), 'maengine.exe')]",
+                    "Arguments": [ "-i", "[variable('Services.MarketingAutomationEngine.Name')]" ]
+                },
+                {
+                    "Path": "[joinpath(variable('Services.ProcessingEngine.InstallPath'), 'Sitecore.ProcessingEngine.exe')]",
+                    "Arguments": [ "-i", "[variable('Services.ProcessingEngine.Name')]" ]
+                }
+            ]
+        },
+        "StartAppPool": {
+            "Description": "Starts the app pool.",
+            "Type": "ManageAppPool",
+            "Params": {
+                "Name": "[parameter('SiteName')]",
+                "Action": "Start"
+            }
+        },
+        "StartWebsite": {
+            "Description": "Starts the website.",
+            "Type": "ManageWebsite",
+            "Params": {
+                "Name": "[parameter('SiteName')]",
+                "Action": "Start"
+            }
+        },
+        "StartServices": {
+            "Description": "Starts the service.",
+            "Type": "ManageService",
+            "Params": [
+                {
+                    "Name": "[variable('Services.IndexWorker.Name')]",
+                    "Status": "Running"
+                },
+                {
+                    "Name": "[variable('Services.MarketingAutomationEngine.Name')]",
+                    "Status": "Running"
+                },
+                {
+                    "Name": "[variable('Services.ProcessingEngine.Name')]",
+                    "Status": "Running"
+                }
+            ]
+        }
+    },
+	"UninstallTasks": {
+        "StopServices": {
+            "Description": "Stops the services if they are running.",
+            "Type": "ManageService",
+            "Params": [
+                {
+                    "Name": "[variable('Services.IndexWorker.Name')]",
+                    "Status": "Stopped",
+                    "PostDelay": 3000
+                },
+                {
+                    "Name": "[variable('Services.MarketingAutomationEngine.Name')]",
+                    "Status": "Stopped",
+                    "PostDelay": 3000
+                },
+                {
+                    "Name": "[variable('Services.ProcessingEngine.Name')]",
+                    "Status": "Stopped",
+                    "PostDelay": 3000
+                }
+            ]
+        },
+        "RemoveServices": {
+            "Description": "Removes the services.",
+            "Type": "RemoveService",
+            "Params": [
+                { "Name": "[variable('Services.IndexWorker.Name')]" },
+                { "Name": "[variable('Services.MarketingAutomationEngine.Name')]" },
+                { "Name": "[variable('Services.ProcessingEngine.Name')]" }
+            ]
+        },
+        "StopWebsite": {
+            "Description": "Stops the website if it is running.",
+            "Type": "ManageWebsite",
+            "Params": {
+                "Name": "[parameter('SiteName')]",
+                "Action": "Stop",
+                "ErrorAction": "SilentlyContinue"
+            }
+        },
+        "StopAppPool": {
+            "Description": "Stops the app pool if it is running.",
+            "Type": "ManageAppPool",
+            "Params": {
+                "Name": "[parameter('SiteName')]",
+                "Action": "Stop",
+                "ErrorAction": "SilentlyContinue"
+            }
+        },
+        "RemoveAppPool": {
+            "Description": "Removes the AppPool.",
+            "Type": "RemoveAppPool",
+            "Params": {
+                "Name":  "[parameter('SiteName')]"
+            }
+        },
+        "RemoveWebsite": {
+            "Description": "Removes the website.",
+            "Type": "RemoveWebsite",
+            "Params": {
+                "Name":  "[parameter('SiteName')]"
+            }
+        },        
+        "RemoveHostHeader": {
+            "Description": "Removes the hostheader for the website.",
+            "Type": "HostHeader",
+            "Params": {
+                "HostName": "[parameter('HostMappingName')]",
+                "Action": "Remove"
+            }
+        }             
+    }
+}

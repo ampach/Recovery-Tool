@@ -1,0 +1,222 @@
+{
+    "Parameters": {
+        "XConnectCertificateName": {
+            "Type": "String",
+            "Description": "The name of the certificate to be created for the xconnect server.",
+            "DefaultValue": ""
+        },
+		"SitecoreSiteCertificateName": {
+            "Type": "String",
+            "Description": "The name of the certificate to be created for the xconnect server.",
+            "DefaultValue": ""
+        },
+        "IdentityServerCertificateName": {
+            "Type": "String",
+            "Description": "The name of the certificate to be created for the identity server.",
+            "DefaultValue": ""
+        },
+        "IdentityServerSiteName": {
+            "Type": "String",
+            "Description": "The name of the identity server to be created.",
+            "DefaultValue": "IdentityServer"
+        },
+        "Prefix": {
+            "Type": "String",
+            "DefaultValue": "SC910",
+            "Description": "The prefix for uniquely identifying instances."
+        },
+		"IdentityServerCertificates:CertificateName": {
+            "Type": "String",
+            "Reference": "IdentityServerCertificateName",
+            "Description": "Override to pass IdentityServerCertificateName value to IdentityServerCertificates config."
+        },
+        "XConnectSiteName": {
+            "Type": "String",
+            "DefaultValue": "XConnect",
+            "Description": "The name of the XConnect site."
+        },
+        "SitecoreSiteName": {
+            "Type": "String",
+            "DefaultValue": "Sitecore",
+            "Description": "The name of the Sitecore site."
+        },
+        "ClientSecret": {
+            "Type": "string",
+            "Description": "Client secret of PasswordClient section. It's a random string between 1 and 100 symbols long.",
+            "DefaultValue": "SIF-Default"
+        },
+        "SitecoreInstallationPath": {
+			"Type": "string",
+			"Description": "The path to the folder where Sitecore XP0 will be installed.",
+			"DefaultValue": ""
+		},		
+		"XConnectInstallationPath": {
+			"Type": "string",
+			"Description": "The path to the folder where XConnect will be installed.",
+			"DefaultValue": ""
+		},		
+		"IdentityInstallationPath": {
+			"Type": "string",
+			"Description": "The path to the folder where Sitecore Identity server will be installed.",
+			"DefaultValue": ""
+		},		
+		"SitecoreXP0:InstallationPath": {
+			"Type": "string",
+			"Reference": "SitecoreInstallationPath",
+			"Description": "Override to pass InstallationPath value to SitecoreXP0 config."
+		},
+		"XConnectXP0:InstallationPath": {
+			"Type": "string",
+			"Reference": "XConnectInstallationPath",
+			"Description": "Override to pass InstallationPath value to XConnectXP0 config."
+		},		
+		"IdentityServer:InstallationPath": {
+			"Type": "string",
+			"Reference": "IdentityInstallationPath",
+			"Description": "Override to pass InstallationPath value to IdentityServer config."
+		},
+        "XConnectXP0:Sitename": {
+            "Type": "String",
+            "Reference": "XConnectSiteName",
+            "Description": "Override to pass XConnectSiteName value to XConnectXP0 config."
+        },
+        "SitecoreXP0:Sitename": {
+            "Type": "String",
+            "Reference": "SitecoreSiteName",
+            "Description": "Override to pass SitecoreSiteName value to SitecoreXP0 config."
+        },
+		"SolrUrl": {
+            "Type": "String",
+            "DefaultValue": "https://localhost:8983/solr",
+            "Description": "The Solr instance to use."
+        },
+        "SolrRoot": {
+            "Type": "String",
+            "DefaultValue": "C:\\solr-7.2.1",
+            "Description": "The file path to the Solr instance."
+        },
+        "SolrService": {
+            "Type": "String",
+            "DefaultValue": "Solr-7.2.1",
+            "Description": "The name of the Solr service."
+        },
+        "XConnectCertificates:CertificateName": {
+            "Type": "String",
+            "Reference": "XConnectCertificateName",
+            "Description": "Override to pass XConnectCertificateName value to XConnectCertificates config."
+        },
+		"SitecoreXP0Certificates:CertificateName": {
+            "Type": "String",
+            "Reference": "SitecoreSiteCertificateName",
+            "Description": "Override to pass SitecoreSiteCertificateName value to SitecoreXP0Certificates config."
+        },
+        "IdentityServer:SiteName": {
+            "Type": "String",
+            "Reference": "IdentityServerSiteName",
+            "Description": "Override to pass IdentityServerSiteName value to IdentityServer config."
+        },
+		"XConnectXP0:XConnectCert": {
+            "Type": "String",
+            "Reference": "XConnectCertificateName",
+            "Description": "Override to pass CertificateName value to XConnectXP0 config."
+        },
+        "SitecoreXP0:XConnectCert": {
+            "Type": "String",
+            "Reference": "XConnectCertificateName",
+            "Description": "Override to pass CertificateName value to SitecoreXP0 config."
+        },
+		"SitecoreXP0:SSLCert": {
+            "Type": "String",
+            "Reference": "SitecoreSiteCertificateName",
+            "Description": "The certificate to use for HTTPS web bindings. Provide the name or the thumbprint."
+        },
+        "IdentityServer:SitecoreIdentityCert": {
+            "Type": "String",
+            "Reference": "IdentityServerCertificateName",
+            "Description": "Override to pass IdentityServerCertificateName value to IdentityServer config."
+        },
+        "XConnectXP0:XConnectCert": {
+            "Type": "String",
+            "Reference": "XConnectCertificateName",
+            "Description": "Override to pass CertificateName value to XConnectXP0 config."
+        },
+		 "XConnectSolr:SolrUrl": {
+            "Type": "String",
+            "Reference": "SolrUrl",
+            "Description": "Override to pass SolrURL value to XConnectSolr config."
+        },
+        "XConnectXP0:SolrURL": {
+            "Type": "String",
+            "Reference": "SolrUrl",
+            "Description": "Override to pass SolrURL value to XConnectXP0 config."
+        },
+		"XConnectSolr:CorePrefix": {
+            "Type": "String",
+            "Reference": "Prefix",
+            "Description": "Override to pass Prefix value to XConnectSolr config."
+        },
+        "SitecoreSolr:SolrUrl": {
+            "Type": "String",
+            "Reference": "SolrUrl",
+            "Description": "Override to pass SolrURL value to SitecoreSolr config."
+        },
+        "SitecoreXP0:SolrUrl": {
+            "Type": "String",
+            "Reference": "SolrUrl",
+            "Description": "Override to pass SolrURL value to SitecoreXP0 config."
+        },
+		"SitecoreSolr:CorePrefix": {
+            "Type": "String",
+            "Reference": "Prefix",
+            "Description": "Override to pass Prefix value to SitecoreSolr config."
+        },
+        "XConnectSolr:SolrRoot": {
+            "Type": "String",
+            "Reference": "SolrRoot",
+            "Description": "Override to pass SolrRoot value to XConnectSolr config."
+        },
+        "SitecoreSolr:SolrRoot": {
+            "Type": "String",
+            "Reference": "SolrRoot",
+            "Description": "Override to pass SolrRoot value to SitecoreSolr config."
+        }
+    },
+    "Variables": { 
+
+        "Client.Secret" : "[if(variable('Test.Client.Secret'),variable('Generate.Client.Secret'),parameter('ClientSecret'))]",
+        "Test.Client.Secret": "[equal(parameter('ClientSecret'),'SIF-Default')]",
+        "Generate.Client.Secret": "[randomstring(Length:100,DisAllowSpecial:True)]"
+
+    },
+    "Includes": {
+        "IdentityServerCertificates":{
+            "Source": ".\\createcert.json"
+        },
+        "IdentityServer": {
+            "Source": ".\\identityServer.json"
+        },
+        "XConnectCertificates": {
+            "Source": ".\\createcert.json"
+        },
+		"XConnectSolr": {
+            "Source": ".\\xconnect-solr.json"
+        },
+        "XConnectXP0": {
+            "Source": ".\\xconnect-xp0.json"
+        },
+		"SitecoreSolr": {
+            "Source": ".\\Sitecore-solr.json"
+        },
+		"SitecoreXP0Certificates": {
+            "Source": ".\\createcert.json"
+        },
+		"SitecoreXP0": {
+            "Source": ".\\Sitecore-XP0.json"
+        }
+    },
+    "Register": {
+        "Tasks": {
+            "SetVariable": "Set-Variable"
+        }
+    }
+}
